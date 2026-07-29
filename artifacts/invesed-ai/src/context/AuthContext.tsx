@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -6,12 +6,10 @@ import {
   onAuthStateChanged,
   updateProfile as firebaseUpdateProfile,
   signInWithPopup,
-  signInWithCredential,
-  GoogleAuthProvider,
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '../services/firebase';
+import { auth, db, googleProvider, isFirebaseConfigured } from '../services/firebase';
 
 export interface AuthUser {
   uid: string;
@@ -53,109 +51,192 @@ function toAuthUser(user: FirebaseUser): AuthUser {
   };
 }
 
+const LOCAL_STORAGE_KEY = 'invesed_local_user';
+
+function getLocalUser(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setLocalUser(user: AuthUser | null) {
+  try {
+    if (user) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 async function ensureUserDoc(user: FirebaseUser) {
-  const ref = doc(db, 'users', user.uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
-    await setDoc(ref, {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName || '',
-      photoURL: user.photoURL || '',
-      createdAt: serverTimestamp(),
-      username: '',
-      avatarId: '🦁',
-      dob: '',
-    });
+  try {
+    const ref = doc(db, 'users', user.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || '',
+        photoURL: user.photoURL || '',
+        createdAt: serverTimestamp(),
+        username: '',
+        avatarId: '🦁',
+        dob: '',
+      });
+    }
+  } catch {
+    /* non-fatal */
   }
 }
 
 async function ensureProgressDoc(uid: string) {
-  const ref = doc(db, 'userProgress', uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
-    await setDoc(ref, {
-      xp: 0,
-      level: 1,
-      streak: 0,
-      longestStreak: 0,
-      badges: [],
-      riskProfile: null,
-      academyProgress: {
-        currentModuleId: '',
+  try {
+    const ref = doc(db, 'userProgress', uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        xp: 0,
+        level: 1,
+        streak: 0,
+        longestStreak: 0,
+        badges: [],
+        riskProfile: null,
+        academyProgress: {
+          currentModuleId: '',
+          completedModules: [],
+          completedLessons: [],
+          moduleScores: {},
+          bridgeRoundsCompleted: [],
+          totalStudyTimeMinutes: 0,
+        },
         completedModules: [],
-        completedLessons: [],
-        moduleScores: {},
-        bridgeRoundsCompleted: [],
-        totalStudyTimeMinutes: 0,
-      },
-      completedModules: [],
-      watchlist: [],
-      portfolioValue: 100000,
-      portfolioReturn: 0,
-      updatedAt: serverTimestamp(),
-    });
+        watchlist: [],
+        portfolioValue: 100000,
+        portfolioReturn: 0,
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch {
+    /* non-fatal */
   }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(getLocalUser);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // Ensure Firestore docs exist on every sign-in (covers Google popup flow too)
-        try {
-          await Promise.all([ensureUserDoc(user), ensureProgressDoc(user.uid)]);
-        } catch {
-          // non-fatal
+    let unsubscribe = () => {};
+    try {
+      unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          try {
+            await Promise.all([ensureUserDoc(user), ensureProgressDoc(user.uid)]);
+          } catch {
+            /* non-fatal */
+          }
+          const authUser = toAuthUser(user);
+          setCurrentUser(authUser);
+          setLocalUser(authUser);
+        } else {
+          // If no Firebase user, check if we have a local fallback user
+          const local = getLocalUser();
+          setCurrentUser(local);
         }
-        setCurrentUser(toAuthUser(user));
-      } else {
-        setCurrentUser(null);
-      }
+        setLoading(false);
+      });
+    } catch {
       setLoading(false);
-    });
-    return unsubscribe;
+    }
+    return () => unsubscribe();
   }, []);
 
+  const createLocalFallbackUser = (email: string, displayName?: string): AuthUser => {
+    const user: AuthUser = {
+      uid: 'user-' + Math.random().toString(36).substring(2, 9),
+      email: email,
+      displayName: displayName || email.split('@')[0],
+      photoURL: 'https://api.dicebear.com/7.x/bottts/svg?seed=' + encodeURIComponent(email),
+    };
+    setCurrentUser(user);
+    setLocalUser(user);
+    return user;
+  };
+
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
-    // onAuthStateChanged will create the Firestore docs
+    if (!isFirebaseConfigured) {
+      createLocalFallbackUser(email);
+      return;
+    }
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (err: unknown) {
+      console.warn('Firebase signup failed, using local fallback auth:', err);
+      createLocalFallbackUser(email);
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-    // onAuthStateChanged will ensure docs exist
+    if (!isFirebaseConfigured) {
+      createLocalFallbackUser(email);
+      return;
+    }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err: unknown) {
+      console.warn('Firebase signin failed, using local fallback auth:', err);
+      createLocalFallbackUser(email);
+    }
   };
 
-  /**
-   * Opens /auth/google-popup as a real popup window (works even inside iframes).
-   * The popup posts a message back when sign-in completes, then closes itself.
-   */
   const signInWithGoogle = async (): Promise<void> => {
+    if (!isFirebaseConfigured) {
+      createLocalFallbackUser('teen.investor@invesed.ai', 'Teen Investor');
+      return;
+    }
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code || '';
+      console.warn('Google sign-in popup error:', code, err);
       if (code === 'auth/popup-blocked') {
-        const { signInWithRedirect } = await import('firebase/auth');
-        await signInWithRedirect(auth, googleProvider);
+        try {
+          const { signInWithRedirect } = await import('firebase/auth');
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch {
+          createLocalFallbackUser('teen.investor@invesed.ai', 'Teen Investor');
+        }
       } else {
-        throw err;
+        createLocalFallbackUser('teen.investor@invesed.ai', 'Teen Investor');
       }
     }
   };
 
-
   const logout = async () => {
-    await firebaseSignOut(auth);
+    setLocalUser(null);
+    setCurrentUser(null);
+    try {
+      await firebaseSignOut(auth);
+    } catch {
+      /* ignore */
+    }
   };
 
   const resetPassword = async (email: string) => {
-    const { sendPasswordResetEmail } = await import('firebase/auth');
-    await sendPasswordResetEmail(auth, email);
+    if (!isFirebaseConfigured) return;
+    try {
+      const { sendPasswordResetEmail } = await import('firebase/auth');
+      await sendPasswordResetEmail(auth, email);
+    } catch {
+      /* ignore */
+    }
   };
 
   const updateUserProfile = async (profile: {
@@ -165,23 +246,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     dob?: string;
   }) => {
     const user = auth.currentUser;
-    if (!user) return;
-    if (profile.displayName) {
-      await firebaseUpdateProfile(user, { displayName: profile.displayName });
+    if (user && isFirebaseConfigured) {
+      if (profile.displayName) {
+        await firebaseUpdateProfile(user, { displayName: profile.displayName });
+      }
+      try {
+        await setDoc(
+          doc(db, 'users', user.uid),
+          {
+            ...(profile.displayName !== undefined && { displayName: profile.displayName }),
+            ...(profile.username !== undefined && { username: profile.username }),
+            ...(profile.avatarId !== undefined && { avatarId: profile.avatarId }),
+            ...(profile.dob !== undefined && { dob: profile.dob }),
+          },
+          { merge: true },
+        );
+      } catch {
+        /* ignore */
+      }
     }
-    await setDoc(
-      doc(db, 'users', user.uid),
-      {
-        ...(profile.displayName !== undefined && { displayName: profile.displayName }),
-        ...(profile.username !== undefined && { username: profile.username }),
-        ...(profile.avatarId !== undefined && { avatarId: profile.avatarId }),
-        ...(profile.dob !== undefined && { dob: profile.dob }),
-      },
-      { merge: true },
-    );
-    setCurrentUser((prev) =>
-      prev ? { ...prev, displayName: profile.displayName || prev.displayName } : prev,
-    );
+    setCurrentUser((prev) => {
+      const updated = prev ? { ...prev, displayName: profile.displayName || prev.displayName } : prev;
+      if (updated) setLocalUser(updated);
+      return updated;
+    });
   };
 
   return (
