@@ -24,6 +24,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInAsGuest: () => void;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (profile: {
@@ -169,6 +170,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return user;
   };
 
+  const signInAsGuest = () => {
+    const guestUser: AuthUser = {
+      uid: 'guest-investor-' + Math.random().toString(36).substring(2, 7),
+      email: 'guest@invesed.ai',
+      displayName: 'Guest Investor 🚀',
+      photoURL: 'https://api.dicebear.com/7.x/bottts/svg?seed=GuestInvestor',
+    };
+    setCurrentUser(guestUser);
+    setLocalUser(guestUser);
+  };
+
   const signUp = async (email: string, password: string) => {
     if (!isFirebaseConfigured) {
       createLocalFallbackUser(email);
@@ -274,7 +286,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ currentUser, loading, signUp, signIn, signInWithGoogle, logout, resetPassword, updateUserProfile }}
+      value={{
+        currentUser,
+        loading,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        signInAsGuest,
+        logout,
+        resetPassword,
+        updateUserProfile,
+      }}
     >
       {!loading && children}
     </AuthContext.Provider>

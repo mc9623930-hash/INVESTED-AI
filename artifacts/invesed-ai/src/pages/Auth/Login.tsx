@@ -13,7 +13,8 @@ interface LoginForm {
 
 export default function Login() {
   const [, navigate] = useLocation();
-  const { signIn, signInWithGoogle, currentUser } = useAuth();
+  const { signIn, signInWithGoogle, signInAsGuest, currentUser } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -112,8 +113,22 @@ export default function Login() {
             <p className="text-muted-foreground mt-1">Sign in to continue your investing journey</p>
           </div>
 
-          {/* Google sign-in — direct popup, no intermediate tab needed */}
+          {/* Guest Mode Instant Access */}
           <button
+            type="button"
+            onClick={() => {
+              signInAsGuest();
+              toast.success('Welcome! Entered as Guest Investor 🚀');
+              navigate('/academy');
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all mb-3 shadow-md hover:shadow-lg"
+          >
+            <span>⚡ Continue as Guest (Instant Access)</span>
+          </button>
+
+          {/* Google sign-in */}
+          <button
+
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading}

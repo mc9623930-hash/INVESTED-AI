@@ -1,10 +1,12 @@
 import { useRef, useEffect, useState } from 'react';
-import { Link } from 'wouter';
-import { motion, useInView, useAnimation } from 'framer-motion';
+import { Link, useLocation } from 'wouter';
+import { motion, useInView } from 'framer-motion';
 import {
   BookOpen, BarChart2, TrendingUp, Brain, Trophy, Zap,
   ArrowRight, Play, CheckCircle2, Award
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const letters = 'InvesEd AI'.split('');
 
@@ -80,14 +82,37 @@ function CountUp({ target, duration = 2000 }: { target: number; duration?: numbe
 }
 
 export default function Landing() {
+  const [, navigate] = useLocation();
+  const { signInAsGuest } = useAuth();
+
+  const handleGuestEntry = () => {
+    signInAsGuest();
+    toast.success('Welcome! Entered as Guest Investor 🚀');
+    navigate('/academy');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 brand-gradient opacity-95" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptMCAwdi02aC02djZoNnptNiAwaDZ2LTZoLTZ2NnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
+      <div className="brand-gradient text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/10 to-transparent" />
+        
+        {/* Top Guest Bar */}
+        <div className="max-w-6xl mx-auto px-4 pt-6 flex justify-between items-center relative z-20">
+          <div className="flex items-center gap-2 font-bold text-xl text-white">
+            <TrendingUp className="w-6 h-6 text-emerald-400" />
+            <span>InvesEd AI</span>
+          </div>
+          <button
+            onClick={handleGuestEntry}
+            className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-extrabold rounded-xl shadow-lg transition-all flex items-center gap-2"
+          >
+            <Zap className="w-4 h-4 fill-white" />
+            Instant Guest Access 🚀
+          </button>
+        </div>
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-24 text-center">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 pb-24 text-center">
           {/* Animated logo text */}
           <div className="flex justify-center mb-6">
             <div className="flex items-center gap-3">
@@ -140,22 +165,23 @@ export default function Landing() {
             transition={{ delay: 1.4, duration: 0.5 }}
             className="flex flex-col sm:flex-row gap-3 justify-center"
           >
+            <button
+              onClick={handleGuestEntry}
+              className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-xl text-lg shadow-xl hover:shadow-2xl transition-all flex items-center gap-2 justify-center"
+            >
+              <Zap className="w-5 h-5 fill-white" />
+              ⚡ Instant Guest Access (No Sign-In Needed)
+            </button>
             <Link href="/signup">
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="px-8 py-4 bg-white text-primary font-bold rounded-xl text-lg shadow-xl hover:shadow-2xl transition-shadow flex items-center gap-2 justify-center"
+                className="px-8 py-4 bg-white/20 text-white font-bold rounded-xl text-lg border border-white/30 hover:bg-white/30 transition-shadow flex items-center gap-2 justify-center"
               >
-                Get Started Free
+                Sign Up / Login
                 <ArrowRight className="w-5 h-5" />
               </motion.button>
             </Link>
-            <button
-              className="px-8 py-4 bg-white/15 text-white font-semibold rounded-xl text-lg border border-white/30 hover:bg-white/20 transition-colors flex items-center gap-2 justify-center"
-            >
-              <Play className="w-4 h-4 fill-white" />
-              Watch Demo
-            </button>
           </motion.div>
         </div>
       </div>

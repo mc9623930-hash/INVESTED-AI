@@ -39,7 +39,8 @@ const DEFAULT_ACADEMY_PROGRESS: AcademyProgress = {
 
 export default function SignUp() {
   const [, navigate] = useLocation();
-  const { signUp, signInWithGoogle, updateUserProfile, currentUser } = useAuth();
+  const { signUp, signInWithGoogle, signInAsGuest, updateUserProfile, currentUser } = useAuth();
+
   const { setUserProfile } = useUser();
   const [step, setStep] = useState(1);
   const [selectedAvatar, setSelectedAvatar] = useState('🦁');
@@ -189,8 +190,22 @@ export default function SignUp() {
                   <p className="text-muted-foreground mt-1">Step 1 of 3 — Sign-up method</p>
                 </div>
 
-                {/* Google sign-in — direct popup */}
+                {/* Guest Mode Instant Access */}
                 <button
+                  type="button"
+                  onClick={() => {
+                    signInAsGuest();
+                    toast.success('Welcome! Entered as Guest Investor 🚀');
+                    navigate('/onboarding/quiz');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all mb-3 shadow-md hover:shadow-lg"
+                >
+                  <span>⚡ Continue as Guest (Instant Access)</span>
+                </button>
+
+                {/* Google sign-in */}
+                <button
+
                   type="button"
                   onClick={handleGoogleSignIn}
                   disabled={googleLoading}
