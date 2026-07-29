@@ -1,0 +1,79 @@
+Analyze and improve the InvesEd AI stock market simulator.
+
+Current issues that must be fixed:
+
+1. Holdings Page Bug
+
+* The "Holdings" section is not clickable or does not open properly.
+* Make the Holdings page fully functional.
+* Users should be able to view all purchased stocks, mutual funds, quantity owned, average buy price, current market price, profit/loss, and total portfolio value.
+
+2. Add Sell Functionality
+
+* Currently users can only buy stocks and mutual funds.
+* Add a complete "Sell" feature.
+* Users should be able to:
+
+  * Sell partial holdings.
+  * Sell all holdings.
+  * View realized profit/loss after selling.
+  * Have cash balance updated instantly.
+  * Have portfolio holdings updated immediately after the transaction.
+
+3. Portfolio Improvements
+
+* Add transaction history.
+* Show Buy Date, Sell Date, Quantity, Price, and P&L.
+* Add portfolio performance charts.
+* Show overall return percentage.
+
+4. Expand NSE Stock Universe
+
+* Currently only around 10 NSE stocks are available.
+* Integrate a proper market data source and display a much larger stock universe.
+* Include all major NSE-listed companies across sectors:
+  Banking, IT, Pharma, FMCG, Auto, Energy, Telecom, Infrastructure, Defence, etc.
+* Add search and filter functionality.
+* Users should be able to search stocks by company name or ticker.
+
+5. Expand Mutual Fund Universe
+
+* Currently only around 5 mutual funds are available.
+* Add a comprehensive mutual fund database covering:
+
+  * Large Cap Funds
+  * Mid Cap Funds
+  * Small Cap Funds
+  * Index Funds
+  * Flexi Cap Funds
+  * ELSS Funds
+  * Hybrid Funds
+  * Debt Funds
+* Add search, filter, category, AUM, risk level, and historical return information.
+
+6. Market Data
+
+* Use a reliable API or structured data source.
+* Ensure stock prices and mutual fund data refresh automatically.
+* Handle API failures gracefully.
+
+7. User Experience
+
+* Improve navigation between Dashboard, Portfolio, Holdings, Transactions, and Market sections.
+* Ensure all buttons, cards, and actions are responsive and clickable.
+* Fix any broken links or UI interactions.
+
+8. Testing
+
+* Verify buy and sell flows.
+* Verify portfolio calculations.
+* Verify holdings updates after transactions.
+* Verify transaction history accuracy.
+* Verify stock and mutual fund search functionality.
+
+After implementing the changes, provide a summary of:
+
+* Bugs fixed
+* New features added
+* Files modified
+* Any additional setup required
