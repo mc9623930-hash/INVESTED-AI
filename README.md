@@ -11,7 +11,7 @@
 ## ⚡ Quick Links & Live Application
 
 - 🌐 **Live Application**: [https://mc9623930-hash.github.io/INVESTED-AI/](https://mc9623930-hash.github.io/INVESTED-AI/)
-- 🚀 **Instant Guest Access**: No signup or Firebase keys required — click **⚡ Instant Guest Access** to enter immediately with ₹1,00,000 virtual capital.
+- 🚀 **Instant Guest Access**: Click **⚡ Instant Guest Access** to enter immediately with ₹1,00,000 virtual capital.
 - 📦 **GitHub Repository**: [https://github.com/mc9623930-hash/INVESTED-AI](https://github.com/mc9623930-hash/INVESTED-AI)
 
 ---
@@ -38,11 +38,6 @@
 
 ## 🚀 Running Locally
 
-### Prerequisites
-- Node.js `20+`
-- pnpm `9+` (or `npx pnpm`)
-
-### Steps
 ```bash
 # 1. Install workspace dependencies
 npx pnpm install
@@ -52,26 +47,3 @@ npx pnpm --filter @workspace/invesed-ai run dev
 ```
 
 Open [http://localhost:5173/](http://localhost:5173/) in your browser.
-
----
-
-## 🔑 Environment Variables (Optional)
-
-Create a `.env` file in `artifacts/invesed-ai/.env` if you wish to connect your own live Firebase project:
-
-```env
-VITE_FIREBASE_API_KEY=AIzaSy...
-VITE_FIREBASE_AUTH_DOMAIN=invest-ed-fa52e.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=invest-ed-fa52e
-VITE_FIREBASE_STORAGE_BUCKET=invest-ed-fa52e.firebasestorage.app
-VITE_FIREBASE_MESSAGING_SENDER_ID=717222508122
-VITE_FIREBASE_APP_ID=1:717222508122:web:409ac35127ec3e88980a63
-```
-
----
-
-## 🎨 Key Conventions & Design Rules
-
-- **Currency:** Always formatted as `₹X,XX,XXX` (Indian Rupee formatting).
-- **Design:** Modern dark glassmorphism, responsive for mobile & desktop screens.
-- **Navigation Base:** `/INVESTED-AI/` base route for GitHub Pages compatibility.
