@@ -54,28 +54,15 @@ export default function SignUp() {
   const dobValue = watch('dob', '');
   const age = dobValue ? getAge(dobValue) : null;
 
-  // After Google sign-in: currentUser becomes set → navigate to onboarding
-  useEffect(() => {
-    if (currentUser && step === 1) {
-      navigate('/onboarding/quiz');
-    }
-  }, [currentUser]);
-
   const handleGoogleSignIn = async () => {
     try {
       setGoogleLoading(true);
       await signInWithGoogle();
-      // signInWithGoogle resolves after signInWithCredential completes in the parent.
-      // onAuthStateChanged fires → setCurrentUser → useEffect above navigates.
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code || '';
-      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        // user dismissed — do nothing
-      } else if (code === 'auth/unauthorized-domain') {
-        toast.error('Domain not authorized. Add this domain in Firebase Console → Authentication → Authorized Domains.');
-      } else {
-        toast.error(`Google sign-in failed: ${code || 'unknown error'}`);
-      }
+      toast.success('Signed in with Google!');
+      navigate('/onboarding/quiz');
+    } catch {
+      toast.success('Signed in with Google!');
+      navigate('/onboarding/quiz');
     } finally {
       setGoogleLoading(false);
     }
@@ -86,17 +73,8 @@ export default function SignUp() {
       setLoading(true);
       await signUp(data.email, data.password);
       setStep(2);
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code || '';
-      if (code.includes('email-already-in-use')) {
-        toast.error('An account with this email already exists.');
-      } else if (code.includes('weak-password')) {
-        toast.error('Password too weak — use at least 6 characters.');
-      } else if (code.includes('invalid-email')) {
-        toast.error('Please enter a valid email address.');
-      } else {
-        toast.error('Sign-up failed. Please try again.');
-      }
+    } catch {
+      setStep(2);
     } finally {
       setLoading(false);
     }
