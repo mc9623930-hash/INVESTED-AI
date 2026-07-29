@@ -134,59 +134,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * Opens /auth/google-popup as a real popup window (works even inside iframes).
    * The popup posts a message back when sign-in completes, then closes itself.
    */
-  const signInWithGoogle = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const w = 500;
-      const h = 600;
-      const left = Math.max(0, (screen.width - w) / 2);
-      const top = Math.max(0, (screen.height - h) / 2);
-      const popup = window.open(
-        `${window.location.origin}/auth/google-popup`,
-        'google-signin',
-        `popup,width=${w},height=${h},left=${left},top=${top}`,
-      );
-
-      if (!popup) {
-        // Popup was blocked — fall back to direct signInWithPopup
-        signInWithPopup(auth, googleProvider).then(() => resolve()).catch(reject);
-        return;
+  const signInWithGoogle = async (): Promise<void> => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code || '';
+      if (code === 'auth/popup-blocked') {
+        const { signInWithRedirect } = await import('firebase/auth');
+        await signInWithRedirect(auth, googleProvider);
+      } else {
+        throw err;
       }
-
-      const handleMessage = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-        if (event.data?.type === 'GOOGLE_SIGNIN_SUCCESS') {
-          window.removeEventListener('message', handleMessage);
-          clearInterval(timer);
-          // Use the credential from the popup to sign in the parent window directly.
-          // This avoids relying on cross-window localStorage sync (which can fail in iframes).
-          const { idToken, accessToken } = event.data.credential ?? {};
-          if (idToken || accessToken) {
-            const cred = GoogleAuthProvider.credential(idToken, accessToken);
-            signInWithCredential(auth, cred).then(() => resolve()).catch(reject);
-          } else {
-            resolve(); // fallback: rely on onAuthStateChanged
-          }
-        } else if (event.data?.type === 'GOOGLE_SIGNIN_ERROR') {
-          window.removeEventListener('message', handleMessage);
-          clearInterval(timer);
-          const err = new Error(event.data.message || 'sign-in failed') as Error & { code: string };
-          err.code = event.data.code || '';
-          reject(err);
-        }
-      };
-      window.addEventListener('message', handleMessage);
-
-      // Fallback: if popup closes without postMessage (e.g. user dismissed it),
-      // resolve so the caller can check currentUser via onAuthStateChanged.
-      const timer = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(timer);
-          window.removeEventListener('message', handleMessage);
-          resolve();
-        }
-      }, 400);
-    });
+    }
   };
+
 
   const logout = async () => {
     await firebaseSignOut(auth);
