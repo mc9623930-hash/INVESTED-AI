@@ -33,13 +33,21 @@ export default function Login() {
       await signInWithGoogle();
       toast.success('Welcome back!');
       navigate('/academy');
-    } catch {
-      toast.success('Welcome back!');
-      navigate('/academy');
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code || '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        // user closed popup
+      } else if (code === 'auth/unauthorized-domain') {
+        toast.error('Add mc9623930-hash.github.io to Firebase Console -> Authentication -> Settings -> Authorized Domains');
+      } else {
+        toast.error(`Google Sign-In: ${code || 'Sign-in completed'}`);
+        navigate('/academy');
+      }
     } finally {
       setGoogleLoading(false);
     }
   };
+
 
   const onSubmit = async (data: LoginForm) => {
     try {

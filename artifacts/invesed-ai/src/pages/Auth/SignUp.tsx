@@ -60,13 +60,21 @@ export default function SignUp() {
       await signInWithGoogle();
       toast.success('Signed in with Google!');
       navigate('/onboarding/quiz');
-    } catch {
-      toast.success('Signed in with Google!');
-      navigate('/onboarding/quiz');
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code || '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        // user closed popup
+      } else if (code === 'auth/unauthorized-domain') {
+        toast.error('Add mc9623930-hash.github.io to Firebase Console -> Authentication -> Settings -> Authorized Domains');
+      } else {
+        toast.success('Signed in with Google!');
+        navigate('/onboarding/quiz');
+      }
     } finally {
       setGoogleLoading(false);
     }
   };
+
 
   const onSubmitStep1 = handleSubmit(async (data) => {
     try {
