@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { db, auth } from '../services/firebase';
+import { db, auth, isFirebaseConfigured } from '../services/firebase';
 import type { RiskProfile, AcademyProgress } from '../types';
 
 interface UserProfile {
@@ -69,6 +69,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const currentUidRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!isFirebaseConfigured) return;
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUidRef.current = user.uid;

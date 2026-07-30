@@ -133,9 +133,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!isFirebaseConfigured) {
+      const local = getLocalUser();
+      setCurrentUser(local);
+      setLoading(false);
+      return;
+    }
+
     let unsubscribe = () => {};
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+
     try {
       unsubscribe = onAuthStateChanged(auth, async (user) => {
+        clearTimeout(safetyTimer);
         if (user) {
           try {
             await Promise.all([ensureUserDoc(user), ensureProgressDoc(user.uid)]);
@@ -153,9 +165,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       });
     } catch {
+      clearTimeout(safetyTimer);
       setLoading(false);
     }
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(safetyTimer);
+      unsubscribe();
+    };
   }, []);
 
   const createLocalFallbackUser = (email: string, displayName?: string): AuthUser => {

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { db, auth } from '../services/firebase';
+import { db, auth, isFirebaseConfigured } from '../services/firebase';
 
 export interface Holding {
   ticker: string;
@@ -68,6 +68,10 @@ export function SimulatorProvider({ children }: { children: React.ReactNode }) {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (!isFirebaseConfigured) {
+      setIsLoaded(true);
+      return;
+    }
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         uidRef.current = user.uid;

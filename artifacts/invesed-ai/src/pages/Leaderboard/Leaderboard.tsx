@@ -10,7 +10,7 @@ import {
   getDocs,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { db, isFirebaseConfigured } from '../../services/firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useUser } from '../../context/UserContext';
 
@@ -35,6 +35,14 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'XP', label: 'XP' },
 ];
 
+const DEMO_LEADERS: LeaderEntry[] = [
+  { uid: '1', rank: 1, username: 'aarav_invests', displayName: 'Aarav Sharma', avatarId: '🦁', level: 6, xp: 2450, portfolioReturn: 18.4, streak: 12 },
+  { uid: '2', rank: 2, username: 'priya_crypto', displayName: 'Priya Patel', avatarId: '🦊', level: 5, xp: 1980, portfolioReturn: 14.2, streak: 8 },
+  { uid: '3', rank: 3, username: 'rahul_trader', displayName: 'Rahul Verma', avatarId: '⚡', level: 5, xp: 1720, portfolioReturn: 11.8, streak: 5 },
+  { uid: '4', rank: 4, username: 'ananya_stocks', displayName: 'Ananya Gupta', avatarId: '🚀', level: 4, xp: 1410, portfolioReturn: 9.5, streak: 4 },
+  { uid: '5', rank: 5, username: 'vihaan_nifty', displayName: 'Vihaan Reddy', avatarId: '💎', level: 4, xp: 1150, portfolioReturn: 7.2, streak: 3 },
+];
+
 function rankBadge(rank: number) {
   if (rank === 1) return '🏆';
   if (rank === 2) return '🥈';
@@ -57,6 +65,9 @@ function SkeletonRow() {
 }
 
 async function fetchLeaders(tab: TabKey): Promise<LeaderEntry[]> {
+  if (!isFirebaseConfigured) {
+    return DEMO_LEADERS;
+  }
   const col = collection(db, 'userProgress');
   let q;
 
